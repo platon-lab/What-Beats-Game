@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>What Beats Game?</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #ff00cc, #333399, #00c9ff, #92fe9d);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .glass-panel.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .target-word {
+            font-size: 36px;
+            font-weight: 900;
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+            margin: 10px 0;
+            word-break: break-word;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 18px;
+            outline: none;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        input:focus {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(90deg, #00c9ff, #92fe9d);
+            color: #111;
+            font-size: 18px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 201, 255, 0.6);
+        }
+
+        button.danger {
+            background: linear-gradient(90deg, #ff416c, #ff4b2b);
+            color: white;
+        }
+
+        .score-board {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 700;
+            backdrop-filter: blur(5px);
+        }
+
+        #visual-result {
+            font-size: 80px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+
+        .pet-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            object-fit: cover;
+            border: 4px solid white;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .moral-text {
+            font-size: 18px;
+            line-height: 1.5;
+            font-style: italic;
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 15px;
+        }
+
+        .loader {
+            display: none;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="score-board">Ланцюжок: <span id="score">0</span></div>
+
+    <div id="screen-start" class="glass-panel active">
+        <h1>Що переможе?</h1>
+        <p>Нескінченний логічно-абсурдний ланцюжок, де ШІ вирішує твою долю. Доведи, що твій варіант сильніший!</p>
+        <button onclick="startGame()">Почати гру</button>
+    </div>
+
+    <div id="screen-game" class="glass-panel">
+        <h2>Що переможе...</h2>
+        <div class="target-word" id="current-target">Гру</div>
+        <input type="text" id="player-input" placeholder="Напиши свій варіант..." autocomplete="off">
+        <button id="submit-btn" onclick="submitAnswer()">Бій!</button>
+        <div class="loader" id="loading-spinner"></div>
+    </div>
+
+    <div id="screen-result" class="glass-panel">
+        <h1 id="result-title">ПЕРЕМОГА!</h1>
+        <div id="visual-result">🦠</div>
+        <div class="moral-text" id="moral-text">Баг зламав гру!</div>
+        <button id="next-btn" onclick="nextRound()">Далі</button>
+    </div>
+
+    <script>
+        const API_URL = 'https://backend.buildpicoapps.com/aero/run/llm-api?pk=v1-Z0FBQUFBQm5HUEtMSjJkakVjcF9IQ0M0VFhRQ0FmSnNDSHNYTlJSblE0UXo1Q3RBcjFPcl9YYy1OZUhteDZWekxHdWRLM1M1alNZTkJMWEhNOWd4S1NPSDBTWC12M0U2UGc9PQ==';
+        
+        let score = 0;
+        let currentTarget = "гру";
+        const pets = ["Tito", "Smartik", "Junior", "Fil", "Milka", "Bark"];
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.glass-panel').forEach(el => el.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function startGame() {
+            score = 0;
+            updateScore();
+            currentTarget = "гру";
+            document.getElementById('current-target').textContent = "Гру";
+            document.getElementById('player-input').value = "";
+            switchScreen('screen-game');
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+
+        async function submitAnswer() {
+            const playerInput = document.getElementById('player-input').value.trim();
+            if (!playerInput) return;
+
+            // UI changes during loading
+            document.getElementById('submit-btn').style.display = 'none';
+            document.getElementById('player-input').style.display = 'none';
+            document.getElementById('loading-spinner').style.display = 'block';
+
+            const promptText = `
+Ти — дуже смішний, саркастичний суддя у грі "Що переможе?".
+Поточний об'єкт: "${currentTarget}".
+Гравець каже, що його переможе: "${playerInput}".
+Твоя задача — вирішити, чи може "${playerInput}" перемогти "${currentTarget}" логічно, фізично або просто дуже смішно.
+УВАГА (СЕКРЕТИ): 
+- Якщо гравець згадує "PLATON GAMES", ти знаєш, що це легендарний сайт з іграми про песиків та котиків. Воно перемагає майже все цифрове!
+- Ти знаєш легендарних героїв-тварин: Тіто (собака), Смартік (собака), Джуніор (кіт), Філ (песик), Мілка (кішка), Барк (собака). Вони дуже сильні і милі!
+ЯКЩО гравець не правий (наприклад "кактус" переможе "гру" - це неможливо, бо кактус фізичний, а гра цифрова) - гравець ПРОГРАЄ.
+
+Дай відповідь СУВОРО і ТІЛЬКИ у форматі JSON без жодних інших слів, без маркдауну:
+{
+  "result": "WIN" або "LOSE",
+  "emoji": "Один відповідний емодзі. АЛЕ якщо гравець ввів героя (Тіто, Смартік, Джуніор, Філ, Мілка, Барк), напиши тут лише його ім'я латиницею з великої букви (наприклад Tito)",
+  "moral": "Дуже смішне та логічне пояснення українською мовою чому перемогло або чому ні. Максимум 2 речення."
+}`;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ prompt: promptText })
+                });
+                
+                const data = await response.json();
+                let cleanJson = data.text.replace(/```json/g, '').replace(/```/g, '').trim();
+                const parsedResult = JSON.parse(cleanJson);
+
+                handleResult(parsedResult, playerInput);
+            } catch (e) {
+                console.error("API Error or parsing failed:", e);
+                // Фолбек, якщо ШІ повернув не JSON
+                handleResult({
+                    result: "WIN", 
+                    emoji: "🤯", 
+                    moral: "Система в шоці від твоєї відповіді, але зараховує перемогу!"
+                }, playerInput);
+            }
+        }
+
+        function handleResult(data, playerAnswer) {
+            document.getElementById('submit-btn').style.display = 'inline-block';
+            document.getElementById('player-input').style.display = 'inline-block';
+            document.getElementById('loading-spinner').style.display = 'none';
+
+            const isWin = data.result.toUpperCase() === "WIN";
+            const resultTitle = document.getElementById('result-title');
+            const visualResult = document.getElementById('visual-result');
+            const moralText = document.getElementById('moral-text');
+            const nextBtn = document.getElementById('next-btn');
+
+            // Render Image if it's a pet, otherwise Emoji
+            if (pets.includes(data.emoji)) {
+                visualResult.innerHTML = `<img src="${data.emoji}.png" alt="${data.emoji}" class="pet-img" onerror="this.outerHTML='🐾'">`;
+            } else {
+                visualResult.textContent = data.emoji;
+            }
+
+            moralText.textContent = data.moral;
+
+            if (isWin) {
+                resultTitle.textContent = "ПЕРЕМОГА!";
+                resultTitle.style.color = "#92fe9d";
+                nextBtn.textContent = "Далі";
+                nextBtn.className = "";
+                nextBtn.onclick = () => {
+                    score++;
+                    updateScore();
+                    currentTarget = playerAnswer;
+                    document.getElementById('current-target').textContent = playerAnswer;
+                    document.getElementById('player-input').value = "";
+                    switchScreen('screen-game');
+                };
+            } else {
+                resultTitle.textContent = "ПОРАЗКА!";
+                resultTitle.style.color = "#ff416c";
+                nextBtn.textContent = "Спробувати знову";
+                nextBtn.className = "danger";
+                nextBtn.onclick = startGame;
+            }
+
+            switchScreen('screen-result');
+        }
+
+        // Обробка Enter
+        document.getElementById('player-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') submitAnswer();
+        });
+    </script>
+</body>
+</html>
