@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>What Beats Game?</title>
+    <title>What Beats Rock?</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -176,6 +176,16 @@
             margin: 0 auto;
         }
 
+        .repeat-warning {
+            background: rgba(255, 65, 108, 0.4);
+            border: 2px solid #ff416c;
+            border-radius: 15px;
+            padding: 10px 15px;
+            font-size: 15px;
+            font-weight: 700;
+            display: none;
+        }
+
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes bounceIn {
             0% { transform: scale(0); }
@@ -190,14 +200,15 @@
 
     <div id="screen-start" class="glass-panel active">
         <h1>Що переможе?</h1>
-        <p>Нескінченний логічно-абсурдний ланцюжок, де ШІ вирішує твою долю. Доведи, що твій варіант сильніший!Ми зробили ШІ максимально тупішим і не сучасним</p>
+        <p>Нескінченний логічно-абсурдний ланцюжок, де ШІ вирішує твою долю. Доведи, що твій варіант сильніший!</p>
         <button onclick="startGame()">Почати гру</button>
     </div>
 
     <div id="screen-game" class="glass-panel">
         <h2>Що переможе...</h2>
-        <div class="target-word" id="current-target">Гру</div>
+        <div class="target-word" id="current-target">Камінь</div>
         <input type="text" id="player-input" placeholder="Напиши свій варіант..." autocomplete="off">
+        <div class="repeat-warning" id="repeat-warning">⚠️ Це слово вже було використано у цьому раунді!</div>
         <button id="submit-btn" onclick="submitAnswer()">Бій!</button>
         <div class="loader" id="loading-spinner"></div>
     </div>
@@ -213,8 +224,27 @@
         const API_URL = 'https://backend.buildpicoapps.com/aero/run/llm-api?pk=v1-Z0FBQUFBQm5HUEtMSjJkakVjcF9IQ0M0VFhRQ0FmSnNDSHNYTlJSblE0UXo1Q3RBcjFPcl9YYy1OZUhteDZWekxHdWRLM1M1alNZTkJMWEhNOWd4S1NPSDBTWC12M0U2UGc9PQ==';
         
         let score = 0;
-        let currentTarget = "гру";
+        let currentTarget = "Камінь";
+        // Всі слова використані за поточний раунд (від початку гри до поразки)
+        let usedWords = [];
+
         const pets = ["Tito", "Smartik", "Junior", "Fil", "Milka", "Bark"];
+
+        // Відповідність українських/транслітерованих імен до ключів зображень
+        const petNameMap = {
+            "тіто": "Tito",
+            "tito": "Tito",
+            "смартік": "Smartik",
+            "smartik": "Smartik",
+            "джуніор": "Junior",
+            "junior": "Junior",
+            "філ": "Fil",
+            "fil": "Fil",
+            "мілка": "Milka",
+            "milka": "Milka",
+            "барк": "Bark",
+            "bark": "Bark"
+        };
 
         function switchScreen(screenId) {
             document.querySelectorAll('.glass-panel').forEach(el => el.classList.remove('active'));
@@ -223,10 +253,12 @@
 
         function startGame() {
             score = 0;
+            usedWords = ["Камінь"]; // стартове слово одразу в список
             updateScore();
-            currentTarget = "гру";
-            document.getElementById('current-target').textContent = "Гру";
+            currentTarget = "Камінь";
+            document.getElementById('current-target').textContent = "Камінь";
             document.getElementById('player-input').value = "";
+            document.getElementById('repeat-warning').style.display = 'none';
             switchScreen('screen-game');
         }
 
@@ -234,30 +266,64 @@
             document.getElementById('score').textContent = score;
         }
 
+        function normalizeWord(word) {
+            return word.trim().toLowerCase();
+        }
+
         async function submitAnswer() {
             const playerInput = document.getElementById('player-input').value.trim();
             if (!playerInput) return;
+
+            const normalized = normalizeWord(playerInput);
+
+            // Перевірка на повтор
+            if (usedWords.includes(normalized)) {
+                document.getElementById('repeat-warning').style.display = 'block';
+                document.getElementById('player-input').value = "";
+                setTimeout(() => {
+                    document.getElementById('repeat-warning').style.display = 'none';
+                }, 2500);
+                return;
+            }
+
+            document.getElementById('repeat-warning').style.display = 'none';
 
             // UI changes during loading
             document.getElementById('submit-btn').style.display = 'none';
             document.getElementById('player-input').style.display = 'none';
             document.getElementById('loading-spinner').style.display = 'block';
 
-            const promptText = `
-Ти — дуже смішний, саркастичний суддя у грі "Що переможе?".
-Поточний об'єкт: "${currentTarget}".
-Гравець каже, що його переможе: "${playerInput}".
-Твоя задача — вирішити, чи може "${playerInput}" перемогти "${currentTarget}" логічно, фізично або просто дуже смішно.
-УВАГА (СЕКРЕТИ): 
-- Якщо гравець згадує "PLATON GAMES", ти знаєш, що це легендарний сайт з іграми про песиків та котиків. Воно перемагає майже все цифрове!
-- Ти знаєш легендарних героїв-тварин: Тіто (собака), Смартік (собака), Джуніор (кіт), Філ (песик), Мілка (кішка), Барк (собака). Вони дуже сильні і милі!
-ЯКЩО гравець не правий (наприклад "кактус" переможе "гру" - це неможливо, бо кактус фізичний, а гра цифрова) - гравець ПРОГРАЄ.
+            // Визначаємо чи введено ім'я персонажа
+            const petKey = petNameMap[normalized] || null;
 
-Дай відповідь СУВОРО і ТІЛЬКИ у форматі JSON без жодних інших слів, без маркдауну:
+            const promptText = `Ти — розумний, контекстний і дотепний суддя у грі "Що переможе?".
+
+ПОТОЧНИЙ ОБ'ЄКТ ДЛЯ ПЕРЕМОГИ: "${currentTarget}"
+ВАРІАНТ ГРАВЦЯ: "${playerInput}"
+
+ПРАВИЛА ОЦІНКИ (строго дотримуйся):
+1. Оціни, чи може "${playerInput}" логічно, фізично, концептуально або ситуативно перемогти "${currentTarget}".
+2. Враховуй КОНТЕКСТ СЛІВ. Приклади:
+   - "Баг" = помилка/глюк у програмі чи грі, НЕ комаха,може перемогти гру тим що вона заглюче.
+   - "Фікс" = виправлення помилки або ремонт, НЕ щось інше,може прибрати баг.
+   - "Поломка ПК" = критична проблема, без ПК гра не працює.
+   - "Знищення світу" = глобальна катастрофа, яка знищує все.
+   - "Ножиці" = можуть перемогти бумагу.
+3. Логіка перемоги може бути:
+   - Пряма (вода гасить вогонь).
+   - Концептуальна (час руйнує все).
+   - Ситуативна (баг ламає програму).
+   - Абсурдна, але смішна і внутрішньо логічна.
+4. ЗАБОРОНЕНО вигадувати персонажів або об'єкти, яких гравець не згадував.
+5. НЕ ототожнюй слова з випадковими асоціаціями — читай буквально і контекстно.
+6. Персонажі Тіто (собака), Смартік (собака), Джуніор (кіт), Філ (песик), Мілка (кішка), Барк (собака) — РЕАЛЬНІ ГЕРОЇ з великою силою. Якщо гравець їх вводить — вони мають шанс перемогти майже будь-що завдяки своїй харизмі, силі та непередбачуваності.
+7. "PLATON GAMES" — легендарний ігровий сайт. Перемагає майже все цифрове та ігрове.
+
+Відповідай СУВОРО тільки у форматі JSON, без жодного тексту поза ним, без маркдауну, без коментарів:
 {
   "result": "WIN" або "LOSE",
-  "emoji": "Один відповідний емодзі. АЛЕ якщо гравець ввів героя (Тіто, Смартік, Джуніор, Філ, Мілка, Барк), напиши тут лише його ім'я латиницею з великої букви (наприклад Tito)",
-  "moral": "Дуже смішне та логічне пояснення українською мовою чому перемогло або чому ні. Максимум 2 речення."
+  "emoji": "Один влучний емодзі що відображає суть відповіді. АЛЕ якщо гравець ввів ім'я героя (Tito, Smartik, Junior, Fil, Milka, Bark) — вкажи тут лише це ім'я латиницею з великої букви.",
+  "moral": "Коротке (1-2 речення), дотепне і логічне пояснення українською мовою чому перемогло або програло. Відповідай по суті запиту, без зайвих персонажів."
 }`;
 
             try {
@@ -271,19 +337,23 @@
                 let cleanJson = data.text.replace(/```json/g, '').replace(/```/g, '').trim();
                 const parsedResult = JSON.parse(cleanJson);
 
-                handleResult(parsedResult, playerInput);
+                // Якщо гравець ввів ім'я персонажа — примусово встановлюємо правильний ключ для зображення
+                if (petKey) {
+                    parsedResult.emoji = petKey;
+                }
+
+                handleResult(parsedResult, playerInput, normalized);
             } catch (e) {
                 console.error("API Error or parsing failed:", e);
-                // Фолбек, якщо ШІ повернув не JSON
                 handleResult({
                     result: "WIN", 
                     emoji: "🤯", 
                     moral: "Система в шоці від твоєї відповіді, але зараховує перемогу!"
-                }, playerInput);
+                }, playerInput, normalized);
             }
         }
 
-        function handleResult(data, playerAnswer) {
+        function handleResult(data, playerAnswer, normalizedAnswer) {
             document.getElementById('submit-btn').style.display = 'inline-block';
             document.getElementById('player-input').style.display = 'inline-block';
             document.getElementById('loading-spinner').style.display = 'none';
@@ -311,6 +381,8 @@
                 nextBtn.onclick = () => {
                     score++;
                     updateScore();
+                    // Додаємо слово до списку використаних
+                    usedWords.push(normalizedAnswer);
                     currentTarget = playerAnswer;
                     document.getElementById('current-target').textContent = playerAnswer;
                     document.getElementById('player-input').value = "";
@@ -330,6 +402,11 @@
         // Обробка Enter
         document.getElementById('player-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') submitAnswer();
+        });
+
+        // Приховуємо попередження при введенні
+        document.getElementById('player-input').addEventListener('input', function () {
+            document.getElementById('repeat-warning').style.display = 'none';
         });
     </script>
 </body>
